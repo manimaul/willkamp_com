@@ -4,7 +4,6 @@
 
 #include <iostream>
 #include "Httpd.h"
-#include "Response.h"
 #include <microhttpd.h>
 
 int answerConnection(void *pCls,
@@ -43,8 +42,8 @@ int answerConnection(void *pCls,
     /*
      * Answer with 404 not found
      */
-    return MHD_NO; //todo 404
-
+    auto response = std::make_unique<Response>("{\"message\": \"not found\"}", ResponseCode::NOT_FOUND);
+    return httpd->enqueueResponse(pConn, std::move(response));
 }
 
 Httpd::RequestHandler Httpd::findRequestHandler(std::string &path, const char* type) {
@@ -94,7 +93,6 @@ void Httpd::listenOnPort(uint16_t port) {
 void Httpd::addHandler(RequestType requestType,
                        std::string path,
                        RequestHandler fp) {
-    std::cout << "addHandler" << std::endl;
     std::size_t h = hash(path, requestType);
     handlers->insert({h, fp});
 }

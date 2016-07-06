@@ -16,7 +16,8 @@ set(SOURCE_FILES main.cpp
         httpd/Request.h
         httpd/Response.h
         httpd/ResponseCodes.h
-        httpd/RequestTypes.h)
+        httpd/RequestTypes.h
+        mongo/Mongo.h)
 
 add_executable(willkamp ${SOURCE_FILES})
 
