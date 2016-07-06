@@ -46,23 +46,40 @@ public:
         stopListening();
     }
 
-    RequestHandler findRequestHandler(std::string &path, RequestType type);
-
     //endregion
 
     //region METHODS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 private:
+
     std::size_t hash(std::string &path, RequestType &type);
 
 public:
+
+    /**
+     * Add a request handler function for a given path.
+     *
+     * param requestType the type of the http request (GET, POST etc.)
+     * param path the url path of the request (e.g. "/" or "/index.html"
+     */
     void addHandler(RequestType requestType,
                     std::string path,
-                    RequestHandler fp);
+                    Httpd::RequestHandler fp);
 
+    /**
+     * Start the http daemon and listen on a supplied port.
+     *
+     * param port the port to listen on
+     */
     void listenOnPort(uint16_t port);
 
+    /**
+     * Stop the http daemon.
+     */
     void stopListening();
+
+    int enqueueResponse(struct MHD_Connection *connection, std::unique_ptr<Response> response);
+    Httpd::RequestHandler findRequestHandler(std::string &path, const char* type);
 
     //endregion
 

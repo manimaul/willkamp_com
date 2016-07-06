@@ -7,9 +7,6 @@
 #include "Response.h"
 #include <microhttpd.h>
 
-/**
- * The handler function for all http requests that conform to the MHD_AccessHandlerCallback protocol in microhttpd.h
- */
 int answerConnection(void *pCls,
                      struct MHD_Connection *pConn,
                      char const *pUrl,
@@ -21,53 +18,65 @@ int answerConnection(void *pCls,
     /*
      * Fetch the request body
      */
-    if (nullptr == *con_cls) {
-        *con_cls = (void *) 1;
+    Request *rawRequest = (Request *) *con_cls;
+    if (nullptr == rawRequest) {
+        *con_cls = (void*) new Request();
         return MHD_YES;
     }
     if (*upload_data_size) {
-        //todo append data
+        rawRequest->body.append(upload_data, *upload_data_size);
+        *upload_data_size = 0;
         return MHD_YES;
     }
 
     Httpd *httpd = (Httpd *) pCls;
+    std::unique_ptr<Request> request(rawRequest);
 
     std::string path = pUrl;
-    if (0 == strcmp(pMethod, MHD_HTTP_METHOD_GET)) {
-        Httpd::RequestHandler handler = httpd->findRequestHandler(path, RequestType::GET);
-        if (nullptr != handler) {
-            std::unique_ptr<Request> request = std::make_unique<Request>();
-            request->setBody(upload_data);
-            std::unique_ptr<Response> resp = handler(std::move(request));
-
-            struct MHD_Response *response;
-            response = MHD_create_response_from_buffer(resp->body.size(), (void *) resp->body.c_str(), MHD_RESPMEM_MUST_COPY);
-            //todo: add headers from resp
-            MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_TYPE, "application/json");
-            int ret = MHD_queue_response(pConn, MHD_HTTP_NOT_FOUND, response);
-            MHD_destroy_response(response);
-            return ret;
-        }
-
-    } else if (0 == strcmp(pMethod, MHD_HTTP_METHOD_POST)) {
-
-    } else if (0 == strcmp(pMethod, MHD_HTTP_METHOD_DELETE)) {
-
+    Httpd::RequestHandler handler = httpd->findRequestHandler(path, pMethod);
+    if (nullptr != handler) {
+        request->setBody(upload_data);
+        std::unique_ptr<Response> resp = handler(std::move(request));
+        return httpd->enqueueResponse(pConn, std::move(resp));
     }
-
-    //todo hook up handlers
 
     /*
      * Answer with 404 not found
      */
-    *upload_data_size = 0;
     return MHD_NO; //todo 404
 
 }
 
+Httpd::RequestHandler Httpd::findRequestHandler(std::string &path, const char* type) {
+    RequestType t = UNKNOWN;
+    if (0 == strcmp(type, MHD_HTTP_METHOD_GET)) {
+        t = RequestType::GET;
+    } else if (0 == strcmp(type, MHD_HTTP_METHOD_POST)) {
+        t = RequestType::POST;
+    } else if (0 == strcmp(type, MHD_HTTP_METHOD_DELETE)) {
+        t = RequestType::DELETE;
+    }
+    HandlerMap::const_iterator itor = handlers->find(hash(path, t));
+    if (itor == handlers->end()) {
+        return nullptr;
+    } else {
+        return itor->second;
+    }
+}
+
+int Httpd::enqueueResponse(struct MHD_Connection *connection, std::unique_ptr<Response> resp) {
+    struct MHD_Response *response;
+    response = MHD_create_response_from_buffer(resp->body.size(), (void *) resp->body.c_str(), MHD_RESPMEM_MUST_COPY);
+    for (auto it = resp->get_headers().begin(); it != resp->get_headers().end(); ++it) {
+        MHD_add_response_header(response, it->first.c_str(), it->second.c_str());
+    }
+    int ret = MHD_queue_response(connection, resp->code, response);
+    MHD_destroy_response(response);
+    return ret;
+}
+
 void Httpd::listenOnPort(uint16_t port) {
     if (nullptr == daemon) {
-        std::cout << "listening on port: " << port << std::endl;
         daemon = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY,
                                   port,
                                   nullptr,
@@ -101,25 +110,3 @@ std::size_t Httpd::hash(std::string &path, RequestType &type) {
     std::size_t h2 = std::hash<RequestType>()(type);
     return h1 ^ (h2 << 1);
 }
-
-Httpd::RequestHandler Httpd::findRequestHandler(std::string &path, RequestType type) {
-    HandlerMap *map = handlers.get();
-    HandlerMap::const_iterator itor = map->find(hash(path, type));
-    if (itor == map->end()) {
-        return nullptr;
-    } else {
-        return itor->second;
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-

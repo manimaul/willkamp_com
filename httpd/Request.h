@@ -15,6 +15,7 @@ class Request {
 public:
     Request() {
         body = std::string();
+        headers = std::unordered_map<std::string, std::string>();
     }
 
 public:

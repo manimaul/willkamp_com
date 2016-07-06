@@ -9,14 +9,14 @@ bool running = true;
 using namespace std;
 
 unique_ptr<Response> handleRoot(unique_ptr<Request> ignored) {
-    auto response = make_unique<Response>("{}", OK);
+    auto response = make_unique<Response>("{}", ResponseCode::OK);
     response->addHeader("Content-Type", "application/json");
     return response;
 }
 
 int main() {
     unique_ptr<Httpd> server(new Httpd);
-    server->addHandler(GET, "/", &handleRoot);
+    server->addHandler(RequestType::GET, "/", &handleRoot);
 
     thread t([&] () {
         server->listenOnPort(kPort);

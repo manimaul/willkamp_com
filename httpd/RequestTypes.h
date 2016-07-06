@@ -6,6 +6,7 @@
 #define WILLKAMP_REQUESTTYPES_H
 
 enum RequestType {
+    UNKNOWN,
     GET,
     POST,
     DELETE
