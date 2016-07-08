@@ -23,7 +23,7 @@ int answerConnection(void *pCls,
         return MHD_YES;
     }
     if (*upload_data_size) {
-        rawRequest->body.append(upload_data, *upload_data_size);
+        rawRequest->appendBodyData(upload_data, upload_data_size);
         *upload_data_size = 0;
         return MHD_YES;
     }
@@ -34,16 +34,14 @@ int answerConnection(void *pCls,
     std::string path = pUrl;
     Httpd::RequestHandler handler = httpd->findRequestHandler(path, pMethod);
     if (nullptr != handler) {
-        request->setBody(upload_data);
-        std::unique_ptr<Response> resp = handler(std::move(request));
+        Response resp = handler(std::move(request));
         return httpd->enqueueResponse(pConn, std::move(resp));
     }
 
     /*
      * Answer with 404 not found
      */
-    auto response = std::make_unique<Response>("{\"message\": \"not found\"}", ResponseCode::NOT_FOUND);
-    return httpd->enqueueResponse(pConn, std::move(response));
+    return httpd->enqueueResponse(pConn, Response("{\"message\": \"not found\"}", ResponseCode::NOT_FOUND));
 }
 
 Httpd::RequestHandler Httpd::findRequestHandler(std::string &path, const char* type) {
@@ -63,14 +61,14 @@ Httpd::RequestHandler Httpd::findRequestHandler(std::string &path, const char* t
     }
 }
 
-int Httpd::enqueueResponse(struct MHD_Connection *connection, std::unique_ptr<Response> resp) {
-    struct MHD_Response *response;
-    response = MHD_create_response_from_buffer(resp->body.size(), (void *) resp->body.c_str(), MHD_RESPMEM_MUST_COPY);
-    for (auto it = resp->get_headers().begin(); it != resp->get_headers().end(); ++it) {
-        MHD_add_response_header(response, it->first.c_str(), it->second.c_str());
+int Httpd::enqueueResponse(struct MHD_Connection *connection, Response response) {
+    struct MHD_Response *mhdResponse;
+    mhdResponse = MHD_create_response_from_buffer(response.bodySize(), (void *) response.getBody().c_str(), MHD_RESPMEM_MUST_COPY);
+    for (auto it = response.get_headers().begin(); it != response.get_headers().end(); ++it) {
+        MHD_add_response_header(mhdResponse, it->first.c_str(), it->second.c_str());
     }
-    int ret = MHD_queue_response(connection, resp->code, response);
-    MHD_destroy_response(response);
+    int ret = MHD_queue_response(connection, response.getCode(), mhdResponse);
+    MHD_destroy_response(mhdResponse);
     return ret;
 }
 

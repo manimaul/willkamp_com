@@ -11,21 +11,27 @@
 
 class Request {
 
+private:
+
+    std::string body;
+    //std::unordered_map<std::string, std::string> headers;
 
 public:
-    Request() {
-        body = std::string();
-        headers = std::unordered_map<std::string, std::string>();
+
+    Request() { }
+
+    Request(Request &other) = delete;
+
+    Request(Request &&other) : body() {
+        std::swap(other.body, body);
     }
 
-public:
-    std::string body;
-    std::unordered_map<std::string, std::string> headers;
+    void appendBodyData(char const *upload_data, size_t *upload_data_size) {
+        body.append(upload_data, *upload_data_size);
+    }
 
-    void setBody(const char* body) {
-        if (body && strlen(body)) {
-            Request::body = std::string(body);
-        }
+    const std::string &getBody() const {
+        return body;
     }
 };
 

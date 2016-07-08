@@ -23,30 +23,32 @@ public:
 
 public:
 
-    unique_ptr<Response> handleRoot(unique_ptr<Request> ignored) {
-        auto response = make_unique<Response>("{}", ResponseCode::OK);
-        response->addHeader("Content-Type", "application/json");
+    Response handleRoot(unique_ptr<Request> ignored) {
+        auto response = Response("{}", ResponseCode::OK);
+        response.addHeader("Content-Type", "application/json");
         return response;
     }
 
-    unique_ptr<Response> handleAddPage(unique_ptr<Request> request) {
+    Response handleAddPage(unique_ptr<Request> request) {
         MongoCollection collection = mongo.getCollection(DB_WK, DB_COL_PAGES);
-        collection.upsertRecord(request->body);
-        auto response = make_unique<Response>("{}", ResponseCode::OK);
-        response->addHeader("Content-Type", "application/json");
+        collection.upsertRecord(request->getBody());
+        auto response = Response("{}", ResponseCode::OK);
+        response.addHeader("Content-Type", "application/json");
         return response;
     }
 };
 
 
 int main() {
-    unique_ptr<Httpd> server(new Httpd);
-    unique_ptr<Handler> handler(new Handler);
+    auto server = make_unique<Httpd>();
+    auto handler = make_unique<Handler>();
 
-    Httpd::RequestHandler rh = std::bind( &Handler::handleRoot, handler.get(), std::placeholders::_1);
+    auto rh = std::bind(&Handler::handleRoot, handler.get(), std::placeholders::_1);
     server->addHandler(RequestType::GET, "/", rh);
+
     rh = std::bind( &Handler::handleAddPage, handler.get(), std::placeholders::_1);
     server->addHandler(RequestType::POST, "/page", rh);
+
     thread t([&] () {
         server->listenOnPort(kPort);
         while(running) {

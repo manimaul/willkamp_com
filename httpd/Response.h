@@ -12,14 +12,21 @@
 class Response {
 
 private:
-    std::unordered_map<std::string, std::string> _headers;
 
-public:
+    std::unordered_map<std::string, std::string> _headers;
     std::string body;
     ResponseCode code;
 
-    Response(const std::string &body, ResponseCode code) : body(body), code(code) {
-        _headers = std::unordered_map<std::string, std::string>();
+public:
+
+    Response(const std::string &body, ResponseCode code) : body(body), code(code) { }
+
+    Response(Response &other) = delete; //prevent copy
+
+    Response(Response &&other) : _headers(), body(), code(ResponseCode::NOT_FOUND) {
+        std::swap(other._headers, _headers);
+        std::swap(other.body, body);
+        std::swap(other.code, code);
     }
 
     void addHeader(const std::string &key, const std::string &value) {
@@ -28,6 +35,19 @@ public:
 
     const std::unordered_map<std::string, std::string> &get_headers() const {
         return _headers;
+    }
+
+
+    const std::string &getBody() const {
+        return body;
+    }
+
+    size_t bodySize() const {
+        return body.size();
+    }
+
+    ResponseCode getCode() const {
+        return code;
     }
 };
 

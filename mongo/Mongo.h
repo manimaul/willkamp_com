@@ -12,21 +12,28 @@
 #include <vector>
 
 class Bson {
-    bson_t bson;
+    bson_t *bson;
     bson_error_t error;
 
 public:
 
     Bson() {
-        bson_init(&bson);
+        bson = bson_new();
     }
 
-    Bson(std::string &json) {
-        bson_init_from_json(&bson, json.c_str(), json.size(), &error);
+    Bson(const std::string &json) {
+        bson = bson_new_from_json((const uint8_t *) json.c_str(), json.size(), &error);
+    }
+
+    Bson(Bson &other) = delete;
+
+    Bson(Bson &&other) : bson(nullptr), error(other.error) {
+        error = other.error;
+        std::swap(other.bson, bson);
     }
 
     const bson_t &getBson() const {
-        return bson;
+        return *bson;
     }
 
     const bson_error_t &getError() const {
@@ -34,14 +41,14 @@ public:
     }
 
     std::string getJson() {
-        char * valueStr = bson_as_json(&bson, NULL);
+        char * valueStr = bson_as_json(bson, NULL);
         std::string val = std::string(valueStr);
         bson_free(valueStr);
         return val;
     }
 
     virtual ~Bson() {
-        bson_destroy(&bson);
+        bson_free(bson);
     }
 
 };
@@ -53,6 +60,13 @@ class MongoCollection {
 public:
     MongoCollection(mongoc_client_t *client, std::string &database, std::string &collection) {
         coll = mongoc_client_get_collection(client, database.c_str(), collection.c_str());
+    }
+
+    MongoCollection(MongoCollection &other) = delete; // prevent copy
+
+    MongoCollection(MongoCollection &&other) : coll(nullptr) {
+        coll = other.coll;
+        other.coll = nullptr;
     }
 
     virtual ~MongoCollection() {
@@ -100,7 +114,7 @@ public:
         return value;
     }
 
-    bool upsertRecord(std::string &query) {
+    bool upsertRecord(const std::string &query) {
         bson_error_t error;
         Bson record(query);
         return mongoc_collection_insert(coll, MONGOC_INSERT_NONE, &record.getBson(), NULL, &error);
@@ -114,6 +128,13 @@ class MongoClient {
 public:
     MongoClient(mongoc_client_pool_t *pool) : pool(pool) {
         client = mongoc_client_pool_pop(pool);
+    }
+
+    MongoClient(MongoClient &other) = delete;
+
+    MongoClient(MongoClient &&other) : client(nullptr), pool(nullptr) {
+        std::swap(other.client, client);
+        std::swap(other.pool, pool);
     }
 
     virtual ~MongoClient() {
@@ -137,6 +158,13 @@ public:
         mongoc_init();
         uri = mongoc_uri_new(dbUrl.c_str());
         pool = mongoc_client_pool_new(uri);
+    }
+
+    Mongo(Mongo &other) = delete;
+
+    Mongo(Mongo &&other) : pool(nullptr), uri(nullptr) {
+        std::swap(other.pool, pool);
+        std::swap(other.uri, uri);
     }
 
     virtual ~Mongo() {

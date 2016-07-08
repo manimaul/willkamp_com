@@ -18,7 +18,7 @@ class Httpd {
     //region DEFINITIONS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 public:
-    typedef std::function<std::unique_ptr<Response>(std::unique_ptr<Request>)> RequestHandler;
+    typedef std::function<Response(std::unique_ptr<Request>)> RequestHandler;
 
 private:
     typedef std::unordered_map<std::size_t, RequestHandler> HandlerMap;
@@ -38,7 +38,7 @@ private:
 public:
 
     Httpd() {
-        handlers = std::make_unique<HandlerMap>(HandlerMap());
+        handlers = std::make_unique<HandlerMap>();
         daemon = nullptr;
     }
 
@@ -78,7 +78,7 @@ public:
      */
     void stopListening();
 
-    int enqueueResponse(struct MHD_Connection *connection, std::unique_ptr<Response> response);
+    int enqueueResponse(struct MHD_Connection *connection, Response resp);
     Httpd::RequestHandler findRequestHandler(std::string &path, const char* type);
 
     //endregion
