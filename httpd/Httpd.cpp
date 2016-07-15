@@ -13,7 +13,7 @@ static int keyValueIter(void *cls,
                         const char *value) {
     std::unordered_map<std::string, std::string> *keyValues = (std::unordered_map<std::string, std::string> *) cls;
     auto got = keyValues->find(key);
-    if (got != keyValues->end()) {
+    if (got == keyValues->end()) {
         keyValues->insert({key, value});
         return MHD_YES; // continue iter
     }

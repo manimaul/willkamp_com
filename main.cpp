@@ -23,13 +23,28 @@ public:
 
 public:
 
-    Response handleRoot(unique_ptr<Request> ignored) {
+    Response handleRoot(unique_ptr<Request> request) {
+        std::cout << "handleRoot" << std::endl;
+        for (auto p : request->getHeaders()) {
+            std::cout << "Header: " << p.first << " : " << p.second << std::endl;
+        }
+        for (auto p : request->getParams()) {
+            std::cout << "Param: " << p.first << " : " << p.second << std::endl;
+        }
+        request->getBody();
         auto response = Response("{}", ResponseCode::OK);
         response.addHeader("Content-Type", "application/json");
         return response;
     }
 
     Response handleAddPage(unique_ptr<Request> request) {
+        std::cout << "handleAddPage" << std::endl;
+        for (auto p : request->getHeaders()) {
+            std::cout << "Header: " << p.first << " : " << p.second << std::endl;
+        }
+        for (auto p : request->getParams()) {
+            std::cout << "Param: " << p.first << " : " << p.second << std::endl;
+        }
         MongoCollection collection = mongo.getCollection(DB_WK, DB_COL_PAGES);
         collection.upsertRecord(request->getBody());
         auto response = Response("{}", ResponseCode::OK);
