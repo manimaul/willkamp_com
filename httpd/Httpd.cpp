@@ -5,23 +5,44 @@
 #include <iostream>
 #include "Httpd.h"
 #include <microhttpd.h>
+#include <vector>
 
-int answerConnection(void *pCls,
-                     struct MHD_Connection *pConn,
-                     char const *pUrl,
-                     char const *pMethod,
-                     char const *version,
-                     char const *upload_data,
-                     size_t *upload_data_size,
-                     void **con_cls) {
+static int keyValueIter(void *cls,
+                        enum MHD_ValueKind kind,
+                        const char *key,
+                        const char *value) {
+    std::unordered_map<std::string, std::string> *keyValues = (std::unordered_map<std::string, std::string> *) cls;
+    auto got = keyValues->find(key);
+    if (got != keyValues->end()) {
+        keyValues->insert({key, value});
+        return MHD_YES; // continue iter
+    }
+    return MHD_NO; // end iter
+}
+
+static int answerConnection(void *pCls,
+                            struct MHD_Connection *pConn,
+                            char const *pUrl,
+                            char const *pMethod,
+                            char const *version,
+                            char const *upload_data,
+                            size_t *upload_data_size,
+                            void **con_cls) {
+
     /*
      * Fetch the request body
      */
     Request *rawRequest = (Request *) *con_cls;
     if (nullptr == rawRequest) {
-        *con_cls = (void*) new Request();
+        std::unordered_map<std::string, std::string> headers;
+        std::unordered_map<std::string, std::string> params;
+        MHD_get_connection_values(pConn, MHD_HEADER_KIND, &keyValueIter, &headers);
+        MHD_get_connection_values(pConn, MHD_GET_ARGUMENT_KIND, &keyValueIter, &params);
+
+        *con_cls = (void *) new Request(headers, params);
         return MHD_YES;
     }
+
     if (*upload_data_size) {
         rawRequest->appendBodyData(upload_data, upload_data_size);
         *upload_data_size = 0;
@@ -44,7 +65,7 @@ int answerConnection(void *pCls,
     return httpd->enqueueResponse(pConn, Response("{\"message\": \"not found\"}", ResponseCode::NOT_FOUND));
 }
 
-Httpd::RequestHandler Httpd::findRequestHandler(std::string &path, const char* type) {
+Httpd::RequestHandler Httpd::findRequestHandler(std::string &path, const char *type) {
     RequestType t = UNKNOWN;
     if (0 == strcmp(type, MHD_HTTP_METHOD_GET)) {
         t = RequestType::GET;
@@ -62,10 +83,11 @@ Httpd::RequestHandler Httpd::findRequestHandler(std::string &path, const char* t
 }
 
 int Httpd::enqueueResponse(struct MHD_Connection *connection, Response response) {
-    struct MHD_Response *mhdResponse;
-    mhdResponse = MHD_create_response_from_buffer(response.bodySize(), (void *) response.getBody().c_str(), MHD_RESPMEM_MUST_COPY);
-    for (auto it = response.get_headers().begin(); it != response.get_headers().end(); ++it) {
-        MHD_add_response_header(mhdResponse, it->first.c_str(), it->second.c_str());
+    struct MHD_Response *mhdResponse = MHD_create_response_from_buffer(response.bodySize(),
+                                                                       (void *) response.getBody().c_str(),
+                                                                       MHD_RESPMEM_MUST_COPY);
+    for (auto item : response.get_headers()) {
+        MHD_add_response_header(mhdResponse, item.first.c_str(), item.second.c_str());
     }
     int ret = MHD_queue_response(connection, response.getCode(), mhdResponse);
     MHD_destroy_response(mhdResponse);
