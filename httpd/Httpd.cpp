@@ -4,8 +4,8 @@
 
 #include <iostream>
 #include "Httpd.h"
+#include "../mongo/Mongo.h"
 #include <microhttpd.h>
-#include <vector>
 
 static int keyValueIter(void *cls,
                         enum MHD_ValueKind kind,
@@ -53,6 +53,9 @@ static int answerConnection(void *pCls,
     std::unique_ptr<Request> request(rawRequest);
 
     std::string path = pUrl;
+    if (path.back() == '/') {
+        path.pop_back();
+    }
     Httpd::RequestHandler handler = httpd->findRequestHandler(path, pMethod);
     if (nullptr != handler) {
         Response resp = handler(std::move(request));
@@ -62,7 +65,9 @@ static int answerConnection(void *pCls,
     /*
      * Answer with 404 not found
      */
-    return httpd->enqueueResponse(pConn, Response("{\"message\": \"not found\"}", ResponseCode::NOT_FOUND));
+    Bson message;
+    message.add("message", "not found");
+    return httpd->enqueueResponse(pConn, Response(message.getJson(), ResponseCode::NOT_FOUND));
 }
 
 Httpd::RequestHandler Httpd::findRequestHandler(std::string &path, const char *type) {
@@ -74,7 +79,8 @@ Httpd::RequestHandler Httpd::findRequestHandler(std::string &path, const char *t
     } else if (0 == strcmp(type, MHD_HTTP_METHOD_DELETE)) {
         t = RequestType::DELETE;
     }
-    HandlerMap::const_iterator itor = handlers->find(hash(path, t));
+    size_t h = hash(path, t);
+    HandlerMap::const_iterator itor = handlers->find(h);
     if (itor == handlers->end()) {
         return nullptr;
     } else {

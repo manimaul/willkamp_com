@@ -32,6 +32,10 @@ public:
         std::swap(other.bson, bson);
     }
 
+    void add(std::string key, std::string val) {
+        BSON_APPEND_UTF8(bson, key.c_str(), val.c_str());
+    }
+
     const bson_t &getBson() const {
         return *bson;
     }

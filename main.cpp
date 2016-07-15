@@ -23,6 +23,9 @@ public:
 
 public:
 
+    /**
+     * Request handler for GET "/"
+     */
     Response handleRoot(unique_ptr<Request> request) {
         std::cout << "handleRoot" << std::endl;
         for (auto p : request->getHeaders()) {
@@ -37,6 +40,9 @@ public:
         return response;
     }
 
+    /**
+     * Request handler for POST "/page"
+     */
     Response handleAddPage(unique_ptr<Request> request) {
         std::cout << "handleAddPage" << std::endl;
         for (auto p : request->getHeaders()) {
@@ -51,6 +57,26 @@ public:
         response.addHeader("Content-Type", "application/json");
         return response;
     }
+
+    /**
+     * Request handler for GET "/page"
+     */
+    Response handleGetPage(unique_ptr<Request> request) {
+        std::cout << "handleGetPage" << std::endl;
+        for (auto p : request->getHeaders()) {
+            std::cout << "Header: " << p.first << " : " << p.second << std::endl;
+        }
+        for (auto p : request->getParams()) {
+            std::cout << "Param: " << p.first << " : " << p.second << std::endl;
+        }
+        MongoCollection collection = mongo.getCollection(DB_WK, DB_COL_PAGES);
+        Bson bson;
+        bson.add("message", "not found");
+        auto response = Response(bson.getJson(), ResponseCode::NOT_FOUND);
+        response.addHeader("Content-Type", "application/json");
+        return response;
+    }
+
 };
 
 
@@ -63,6 +89,9 @@ int main() {
 
     rh = std::bind( &Handler::handleAddPage, handler.get(), std::placeholders::_1);
     server->addHandler(RequestType::POST, "/page", rh);
+
+    rh = std::bind( &Handler::handleGetPage, handler.get(), std::placeholders::_1);
+    server->addHandler(RequestType::GET, "/page", rh);
 
     thread t([&] () {
         server->listenOnPort(kPort);
