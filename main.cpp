@@ -4,14 +4,15 @@
 #include "httpd/Httpd.h"
 #include "mongo/Mongo.h"
 
-#define DB_URL "mongodb://localhost:27017/"
-#define DB_WK "wk"
-#define DB_COL_PAGES "pages"
-
-static const int kPort = 8080;
-bool running = true;
-
 using namespace std;
+
+static const string kDbUrl = "mongodb://localhost:27017/";
+static const string kDb = "wk";
+static const string kDbCollectionPages = "pages";
+static const string kApiPublic = "/api/v1/public";
+static const string kApiPrivate = "/api/v1/private";
+static const int kPort = 8080;
+static bool running = true;
 
 class Handler {
 
@@ -19,7 +20,7 @@ class Handler {
 
 public:
 
-    Handler() : mongo(Mongo(DB_URL)) { }
+    Handler() : mongo(Mongo(kDbUrl)) { }
 
 public:
 
@@ -27,15 +28,17 @@ public:
      * Request handler for GET "/"
      */
     Response handleRoot(unique_ptr<Request> request) {
-        std::cout << "handleRoot" << std::endl;
+        cout << "handleRoot" << endl;
         for (auto p : request->getHeaders()) {
-            std::cout << "Header: " << p.first << " : " << p.second << std::endl;
+            cout << "Header: " << p.first << " : " << p.second << endl;
         }
         for (auto p : request->getParams()) {
-            std::cout << "Param: " << p.first << " : " << p.second << std::endl;
+            cout << "Param: " << p.first << " : " << p.second << endl;
         }
         request->getBody();
-        auto response = Response("{}", ResponseCode::OK);
+        Bson bson;
+        bson.add("message", "ok");
+        auto response = Response(bson.getJson(), ResponseCode::OK);
         response.addHeader("Content-Type", "application/json");
         return response;
     }
@@ -44,16 +47,18 @@ public:
      * Request handler for POST "/page"
      */
     Response handleAddPage(unique_ptr<Request> request) {
-        std::cout << "handleAddPage" << std::endl;
+        cout << "handleAddPage" << endl;
         for (auto p : request->getHeaders()) {
-            std::cout << "Header: " << p.first << " : " << p.second << std::endl;
+            cout << "Header: " << p.first << " : " << p.second << endl;
         }
         for (auto p : request->getParams()) {
-            std::cout << "Param: " << p.first << " : " << p.second << std::endl;
+            cout << "Param: " << p.first << " : " << p.second << endl;
         }
-        MongoCollection collection = mongo.getCollection(DB_WK, DB_COL_PAGES);
+        MongoCollection collection = mongo.getCollection(kDb, kDbCollectionPages);
         collection.upsertRecord(request->getBody());
-        auto response = Response("{}", ResponseCode::OK);
+        Bson bson;
+        bson.add("message", "ok");
+        auto response = Response(bson.getJson(), ResponseCode::OK);
         response.addHeader("Content-Type", "application/json");
         return response;
     }
@@ -62,20 +67,29 @@ public:
      * Request handler for GET "/page"
      */
     Response handleGetPage(unique_ptr<Request> request) {
-        std::cout << "handleGetPage" << std::endl;
+        cout << "handleGetPage" << endl;
         for (auto p : request->getHeaders()) {
-            std::cout << "Header: " << p.first << " : " << p.second << std::endl;
+            cout << "Header: " << p.first << " : " << p.second << endl;
         }
         for (auto p : request->getParams()) {
-            std::cout << "Param: " << p.first << " : " << p.second << std::endl;
+            cout << "Param: " << p.first << " : " << p.second << endl;
         }
-        MongoCollection collection = mongo.getCollection(DB_WK, DB_COL_PAGES);
-        Bson bson;
-        bson.add("message", "not found");
-        auto response = Response(bson.getJson(), ResponseCode::NOT_FOUND);
+        MongoCollection collection = mongo.getCollection(kDb, kDbCollectionPages);
+
+        string body = request->getBody();
+        string respBody = collection.findOneRecord(body);
+        auto response = Response(respBody, ResponseCode::NOT_FOUND);
         response.addHeader("Content-Type", "application/json");
         return response;
     }
+
+    Response notFound(unique_ptr<Request> request) {
+        Bson respBody;
+        auto response = Response(respBody.getJson(), ResponseCode::NOT_FOUND);
+        return response;
+    }
+
+//    void printRequestHeadersAndParams(std::unordered_map<std::string, std::string> )
 
 };
 
@@ -84,14 +98,14 @@ int main() {
     auto server = make_unique<Httpd>();
     auto handler = make_unique<Handler>();
 
-    auto rh = std::bind(&Handler::handleRoot, handler.get(), std::placeholders::_1);
+    auto rh = bind(&Handler::handleRoot, handler.get(), placeholders::_1);
     server->addHandler(RequestType::GET, "/", rh);
 
-    rh = std::bind( &Handler::handleAddPage, handler.get(), std::placeholders::_1);
-    server->addHandler(RequestType::POST, "/page", rh);
+    rh = bind( &Handler::handleAddPage, handler.get(), placeholders::_1);
+    server->addHandler(RequestType::POST, kApiPublic + "/page", rh);
 
-    rh = std::bind( &Handler::handleGetPage, handler.get(), std::placeholders::_1);
-    server->addHandler(RequestType::GET, "/page", rh);
+    rh = bind( &Handler::handleGetPage, handler.get(), placeholders::_1);
+    server->addHandler(RequestType::GET, kApiPublic + "/page", rh);
 
     thread t([&] () {
         server->listenOnPort(kPort);

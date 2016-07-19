@@ -80,6 +80,7 @@ Httpd::RequestHandler Httpd::findRequestHandler(std::string &path, const char *t
         t = RequestType::DELETE;
     }
     size_t h = hash(path, t);
+    std::cout << "findRequestHandler path: " << path << " type: " << t << " hash: " << h << std::endl;
     HandlerMap::const_iterator itor = handlers->find(h);
     if (itor == handlers->end()) {
         return nullptr;
@@ -120,6 +121,7 @@ void Httpd::addHandler(RequestType requestType,
                        std::string path,
                        RequestHandler fp) {
     std::size_t h = hash(path, requestType);
+    std::cout << "addHandler path: " << path << " type: " << requestType << " hash: " << h << std::endl;
     handlers->insert({h, fp});
 }
 
