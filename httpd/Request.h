@@ -11,18 +11,22 @@
 
 class Request {
 
+public:
+    typedef std::unordered_map<std::string, std::string> Headers;
+    typedef std::unordered_map<std::string, std::string> Parameters;
+
 private:
 
     std::string body;
-    std::unordered_map<std::string, std::string> headers;
-    std::unordered_map<std::string, std::string> params;
+    Headers headers;
+    Parameters params;
 
 public:
 
     Request() { }
 
-    Request(const std::unordered_map<std::string, std::string> &headers,
-            const std::unordered_map<std::string, std::string> &params) : headers(headers), params(params) { }
+    Request(const Headers &headers,
+            const Parameters &params) : headers(headers), params(params) { }
 
     Request(Request &other) = delete;
 
@@ -40,11 +44,11 @@ public:
         return body;
     }
 
-    const std::unordered_map<std::string, std::string> &getHeaders() const {
+    const Headers &getHeaders() const {
         return headers;
     }
 
-    const std::unordered_map<std::string, std::string> &getParams() const {
+    const Parameters &getParams() const {
         return params;
     }
 };
