@@ -11,6 +11,8 @@ using namespace std;
 static bool running = true;
 
 int main() {
+    Response::setDefaultContentType(kContentTypeJson);
+
     auto server = make_unique<Httpd>();
     auto handler = make_unique<WkService>();
 

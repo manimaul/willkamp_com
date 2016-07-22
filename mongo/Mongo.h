@@ -36,6 +36,12 @@ public:
         BSON_APPEND_UTF8(bson, key.c_str(), val.c_str());
     }
 
+    void addOid(std::string val) {
+        bson_oid_t oid;
+        bson_oid_init_from_string(&oid, val.c_str());
+        BSON_APPEND_OID(bson, "_id", &oid);
+    }
+
     const bson_t &getBson() const {
         return *bson;
     }
@@ -84,10 +90,9 @@ public:
         std::cout << error.message << std::endl;
     }
 
-    std::string findOneRecord(std::string &query) {
+    std::string findOneRecord(Bson &bsonQuery) {
         mongoc_cursor_t *cursor;
         bson_t const *doc;
-        Bson bsonQuery(query);
         std::string value;
 
         cursor = mongoc_collection_find(coll, MONGOC_QUERY_NONE, 0, 1, 0, &bsonQuery.getBson(), NULL, NULL);
@@ -99,6 +104,11 @@ public:
 
         mongoc_cursor_destroy(cursor);
         return value;
+    }
+
+    std::string findOneRecord(std::string query) {
+        Bson bsonQuery(query);
+        return findOneRecord(bsonQuery);
     }
 
     std::vector<std::string> findRecords(std::string &query, uint32_t skip, uint32_t limit, uint32_t batch_size) {

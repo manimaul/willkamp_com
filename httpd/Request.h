@@ -40,6 +40,14 @@ public:
         body.append(upload_data, *upload_data_size);
     }
 
+    std::string findRequestParameter(std::string key) {
+        auto iter = params.find(key);
+        if (iter != params.end()) {
+            return iter->second;
+        }
+        return "";
+    };
+
     const std::string &getBody() const {
         return body;
     }

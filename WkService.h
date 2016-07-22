@@ -44,9 +44,11 @@ public:
      */
     Response handleGetPage(std::unique_ptr<Request> request);
 
-    Response notFound(std::unique_ptr<Request> request);
+private:
 
-//    void printRequestHeadersAndParams(std::unordered_map<std::string, std::string> )
+    Response notFound();
+
+    void printRequestHeadersAndParams(Request &request);
 
 };
 

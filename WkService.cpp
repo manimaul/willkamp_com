@@ -10,18 +10,11 @@ using namespace std;
  * Request handler for GET "/"
  */
 Response WkService::handleRoot(unique_ptr<Request> request) {
-    cout << "handleRoot" << endl;
-    for (auto p : request->getHeaders()) {
-        cout << "Header: " << p.first << " : " << p.second << endl;
-    }
-    for (auto p : request->getParams()) {
-        cout << "Param: " << p.first << " : " << p.second << endl;
-    }
+    printRequestHeadersAndParams(*request);
     request->getBody();
     Bson bson;
     bson.add("message", "ok");
     auto response = Response(bson.getJson(), ResponseCode::OK);
-    response.addHeader("Content-Type", "application/json");
     return response;
 }
 
@@ -29,19 +22,12 @@ Response WkService::handleRoot(unique_ptr<Request> request) {
  * Request handler for POST "/page"
  */
 Response WkService::handleAddPage(unique_ptr<Request> request) {
-    cout << "handleAddPage" << endl;
-    for (auto p : request->getHeaders()) {
-        cout << "Header: " << p.first << " : " << p.second << endl;
-    }
-    for (auto p : request->getParams()) {
-        cout << "Param: " << p.first << " : " << p.second << endl;
-    }
+    printRequestHeadersAndParams(*request);
     MongoCollection collection = mongo.getCollection(kDb, kDbCollectionPages);
     collection.upsertRecord(request->getBody());
     Bson bson;
     bson.add("message", "ok");
     auto response = Response(bson.getJson(), ResponseCode::OK);
-    response.addHeader("Content-Type", "application/json");
     return response;
 }
 
@@ -49,26 +35,36 @@ Response WkService::handleAddPage(unique_ptr<Request> request) {
  * Request handler for GET "/page"
  */
 Response WkService::handleGetPage(unique_ptr<Request> request) {
-    cout << "handleGetPage" << endl;
-    for (auto p : request->getHeaders()) {
-        cout << "Header: " << p.first << " : " << p.second << endl;
+    printRequestHeadersAndParams(*request);
+    auto oid = request->findRequestParameter("oid");
+    if (!oid.empty()) {
+        MongoCollection collection = mongo.getCollection(kDb, kDbCollectionPages);
+        Bson bson;
+        bson.addOid(oid);
+        string record = collection.findOneRecord(bson);
+        if (!record.empty()) {
+            auto response = Response(record, ResponseCode::OK);
+            return response;
+        }
     }
-    for (auto p : request->getParams()) {
-        cout << "Param: " << p.first << " : " << p.second << endl;
-    }
-    MongoCollection collection = mongo.getCollection(kDb, kDbCollectionPages);
+    return notFound();
+}
 
-    string body = request->getBody();
-    string respBody = collection.findOneRecord(body);
-    auto response = Response(respBody, ResponseCode::NOT_FOUND);
-    response.addHeader("Content-Type", "application/json");
+Response WkService::notFound() {
+    Bson respBody;
+    respBody.add("message", "not found");
+    auto response = Response(respBody.getJson(), ResponseCode::NOT_FOUND);
     return response;
 }
 
-Response WkService::notFound(unique_ptr<Request> request) {
-    Bson respBody;
-    auto response = Response(respBody.getJson(), ResponseCode::NOT_FOUND);
-    return response;
+void WkService::printRequestHeadersAndParams(Request &request) {
+    cout << "handleGetPage" << endl;
+    for (auto p : request.getHeaders()) {
+        cout << "Header: " << p.first << " : " << p.second << endl;
+    }
+    for (auto p : request.getParams()) {
+        cout << "Param: " << p.first << " : " << p.second << endl;
+    }
 }
 
 
