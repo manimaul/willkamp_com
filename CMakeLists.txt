@@ -14,6 +14,7 @@ set(SOURCE_FILES main.cpp
         httpd/Httpd.cpp
         httpd/Httpd.h
         httpd/Request.h
+        httpd/Response.cpp
         httpd/Response.h
         httpd/ResponseCodes.h
         httpd/RequestTypes.h

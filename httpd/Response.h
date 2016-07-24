@@ -20,57 +20,31 @@ private:
     std::unordered_map<std::string, std::string> _headers;
     std::string body;
     ResponseCode code;
-    static std::string defaultContentType;
 
 public:
 
-    Response(const std::string &body, ResponseCode code) : body(body), code(code) {
-        if (!defaultContentType.empty()) {
-            setDefaultContentType(defaultContentType);
-        }
-    }
+    Response(const std::string &body, ResponseCode code);
 
     Response(Response &other) = delete; //prevent copy
 
-    Response(Response &&other) : _headers(), body(), code(ResponseCode::NOT_FOUND) {
-        std::swap(other._headers, _headers);
-        std::swap(other.body, body);
-        std::swap(other.code, code);
-    }
+    Response(Response &&other);
 
-    void addHeader(const std::string &key, const std::string &value) {
-        _headers.insert({key, value});
-    }
+    void addHeader(const std::string &key, const std::string &value);
 
-    void setContentTypeJson() {
-        _headers.emplace(kContentType, kContentTypeJson);
-    }
+    void setContentTypeJson();
 
-    void setContentTypeHtml() {
-        _headers.emplace(kContentType, kContentTypeHtml);
-    }
+    void setContentTypeHtml();
 
-    const std::unordered_map<std::string, std::string> &get_headers() const {
-        return _headers;
-    }
+    const std::unordered_map<std::string, std::string> &get_headers() const;
 
-    const std::string &getBody() const {
-        return body;
-    }
+    const std::string &getBody() const;
 
-    size_t bodySize() const {
-        return body.size();
-    }
+    size_t bodySize() const;
 
-    ResponseCode getCode() const {
-        return code;
-    }
+    ResponseCode getCode() const;
 
-    static void setDefaultContentType(std::string type) {
-        defaultContentType = type;
-    }
+    static void setDefaultContentType(std::string type);
 
 };
-
 
 #endif //WILLKAMP_RESPONSE_H
