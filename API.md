@@ -29,6 +29,8 @@
   
 #REST API (private - auth required)
 
+All "private" requests require a request signature signed with a secret key.
+
 ####POST /api/v1/private/file
 **Post a file**
 * required param *query* hmac - the hmac
@@ -48,13 +50,21 @@
 * required param *query* epoch - time in seconds
 
 #REQUEST SIGNING
-* hmac cumulative hmac of the key, time, url and body
-```
-sign(key, msg):
+* sha256 hmac of the key, time and url
+key - a secret key
+time - the current unix time in seconds
+url - the request url e.g. "/api/v1/private/page"
+
+Example in python
+```python
+import hmac, hashlib, time
+
+def sign(key, msg):
     return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
-    
+
 key = "secretKey"
-t = time.time()
+url = "/api/v1/page"
+t = str(int(time.time()))
 key = sign(key, t)
-key = sign(key, url)
+signature = sign(key, url)
 ```

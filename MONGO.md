@@ -1,11 +1,20 @@
-Mongodb installation
-=====
+##[MongoDb](https://www.mongodb.com)
 
-`$ brew install mongodb`
+The mongo-c driver needs a service to connect to.
 
-Startup mongo
-=====
+* Install on OSX:  
+```bash
+brew install mongodb
+```
 
-`$ mkdir ./mongodb_data/`
+* Install on Ubuntu / Linux:  
+```bash
+sudo apt-get install mongodb-org
+```
 
-`$ mongod --dbpath ./mongodb_data/`
+##Startup MongoDb
+
+```bash
+mkdir ./mongodb_data/
+mongod --dbpath ./mongodb_data/
+```
