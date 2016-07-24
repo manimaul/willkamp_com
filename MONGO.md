@@ -2,7 +2,7 @@
 
 The mongo-c driver needs a service to connect to.
 
-* Install on OSX:  
+* Install on MacOS:  
 ```bash
 brew install mongodb
 ```
@@ -12,7 +12,7 @@ brew install mongodb
 sudo apt-get install mongodb-org
 ```
 
-##Startup MongoDb
+##Startup MongoDb (MacOS)
 
 ```bash
 mkdir ./mongodb_data/

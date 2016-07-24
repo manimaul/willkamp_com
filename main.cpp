@@ -7,8 +7,7 @@
 
 using namespace std;
 
-
-static bool running = true;
+bool running = true;
 
 int main() {
     Response::setDefaultContentType(kContentTypeJson);

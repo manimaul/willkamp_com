@@ -23,42 +23,24 @@ private:
 
 public:
 
-    Request() { }
+    Request();
 
     Request(const Headers &headers,
-            const Parameters &params) : headers(headers), params(params) { }
+            const Parameters &params);
 
     Request(Request &other) = delete;
 
-    Request(Request &&other) : body() {
-        std::swap(other.body, body);
-        std::swap(other.headers, headers);
-        std::swap(other.params, params);
-    }
+    Request(Request &&other);
 
-    void appendBodyData(char const *upload_data, size_t *upload_data_size) {
-        body.append(upload_data, *upload_data_size);
-    }
+    void appendBodyData(char const *upload_data, size_t *upload_data_size);
 
-    std::string findRequestParameter(std::string key) {
-        auto iter = params.find(key);
-        if (iter != params.end()) {
-            return iter->second;
-        }
-        return "";
-    };
+    std::string findRequestParameter(std::string key);
 
-    const std::string &getBody() const {
-        return body;
-    }
+    const std::string &getBody() const;
 
-    const Headers &getHeaders() const {
-        return headers;
-    }
+    const Headers &getHeaders() const;
 
-    const Parameters &getParams() const {
-        return params;
-    }
+    const Parameters &getParams() const;
 };
 
 

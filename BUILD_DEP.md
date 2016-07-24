@@ -1,7 +1,7 @@
 ##Library Dependencies
 
 ####[CMake](https://cmake.org/)
-* Install on OSX:
+* Install on MacOS:
 ```bash
 brew install cmake
 ```
@@ -27,7 +27,7 @@ sudo update-alternatives --config c++
 
 [mongo-c api](http://api.mongodb.com/c/current/)
 
-* Install on OSX:  
+* Install on MacOS:  
 ```bash
 brew install mongo-c
 ```
@@ -41,7 +41,7 @@ sudo apt-get install libmongoc-dev libbson-dev
 
 ####[Libmicrohttpd](https://www.gnu.org/software/libmicrohttpd/)
 
-* Install on OSX:  
+* Install on MacOS:  
 ```bash
  brew install microhttpd
  ```

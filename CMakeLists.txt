@@ -13,6 +13,7 @@ set(LIBS ${LIBS} ${BSON_LIBRARIES} ${MONGOC_LIBRARIES})
 set(SOURCE_FILES main.cpp
         httpd/Httpd.cpp
         httpd/Httpd.h
+        httpd/Request.cpp
         httpd/Request.h
         httpd/Response.cpp
         httpd/Response.h
